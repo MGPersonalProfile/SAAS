@@ -2,17 +2,24 @@
 
 Esta carpeta contiene todo lo relacionado con la base de datos del proyecto.
 
-## Estructura prevista
+## Estructura actual
 
 ```
 supabase/
-├── migrations/          SQL versionado, ejecutado en orden alfabético
-│   ├── 0001_schema.sql      (Fase 1: tablas + índices)
-│   ├── 0002_rls.sql         (Fase 1: políticas Row Level Security)
-│   ├── 0003_triggers.sql    (Fase 2: audit append-only, historial procesos)
-│   └── 0004_seed.sql        (Fase 2: presupuesto + 593 líneas PACC)
-├── seed-pacc.ts         (script Node que lee seed_pacc.json del prototipo y genera 0004_seed.sql)
-└── README.md            (este archivo)
+├── migrations/                 SQL versionado, ejecutado en orden alfabético
+│   ├── 0001_schema.sql              Fase 1 ✓: 7 tablas + 3 enums + índices + FTS
+│   └── 0002_rls.sql                 Fase 1 ✓: RLS, helpers, handle_new_user, audit immutable
+└── README.md                   (este archivo)
+```
+
+## Por implementar (próximas fases)
+
+```
+supabase/
+├── migrations/
+│   ├── 0003_triggers.sql            Fase 2: trigger updated_at + historial automático de procesos
+│   └── 0004_seed.sql                Fase 2: presupuesto inicial + 593 líneas PACC
+└── seed-pacc.ts                Fase 2: script Node que lee seed_pacc.json del prototipo
 ```
 
 ## Aplicar migraciones

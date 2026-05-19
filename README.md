@@ -30,7 +30,20 @@ Reescritura moderna del prototipo Python + SQLite que vive en `../CHFM_Sistema_P
 - Layout raíz con `ThemeProvider`, `TooltipProvider`, `Sonner Toaster`, `lang="es"`, fuente Inter.
 - Estructura de `supabase/migrations/` lista para Fase 1.
 
-**Próximo: Fase 1** — Auth, roles, layout autenticado, RLS inicial.
+**Fase 1 — Auth, roles, layout y RLS** completada:
+- Migraciones SQL versionadas en [supabase/migrations/](supabase/migrations/):
+  - `0001_schema.sql`: 7 tablas (profiles, budget, pacc, procesos, proceso_historial, documentos, audit_log) + 3 enums + índices + full-text search en PACC.
+  - `0002_rls.sql`: funciones helper (`current_user_role`, `is_admin`, `is_editor_or_admin`, `can_view_audit`), RLS habilitado en todas las tablas, políticas por rol, trigger `handle_new_user` que crea perfil al registrarse, trigger `audit_log_immutable` que bloquea UPDATE/DELETE.
+- [types/database.ts](types/database.ts) con tipos de las 7 tablas, 3 enums y 5 funciones RPC (sincronizar a mano hasta que se instale Supabase CLI).
+- Clientes Supabase tipados (`lib/supabase/{server,client,proxy}.ts`).
+- [lib/auth/](lib/auth/): `permissions.ts` con mapa rol→módulos, `index.ts` con `getCurrentProfile`, `requireProfile`, `requireModule`.
+- Layout autenticado [app/(app)/layout.tsx](app/\(app\)/layout.tsx) con sidebar colapsable shadcn (drawer en móvil), topbar con toggle + theme switcher, persistencia de estado abierto/cerrado vía cookie.
+- Componentes layout: `AppSidebar` (filtra módulos por rol), `UserMenu` (dropdown con logout), `PageHeader` (header consistente).
+- 8 páginas placeholder con `requireModule()` enforcement: dashboard, presupuesto, pacc, compras, reportes, documentos, usuarios, auditoría.
+- `proxy.ts` redirige `/` y `/auth/login` a `/dashboard` si hay sesión, y a `/auth/login` si no hay sesión en ruta privada.
+- Formularios de auth traducidos: login, sign-up (con nombre completo + validación de 12 caracteres), forgot-password, update-password, sign-up-success, error.
+
+**Próximo: Fase 2** — Aplicar migraciones, importar seed del PACC (593 líneas), triggers de historial de procesos y `updated_at` automático.
 
 ## Cómo correr el proyecto localmente
 
@@ -88,27 +101,53 @@ Reabrir la terminal después.
 
 ```
 chfm-app/
-├── app/                        Next.js App Router
-│   ├── auth/                       Páginas de login, registro, recuperación
+├── app/
+│   ├── (app)/                      Rutas privadas (sidebar + auth obligatoria)
+│   │   ├── layout.tsx              SidebarProvider + AppSidebar + topbar
+│   │   ├── dashboard/page.tsx      Página principal post-login
+│   │   ├── presupuesto/page.tsx
+│   │   ├── pacc/page.tsx
+│   │   ├── compras/page.tsx
+│   │   ├── reportes/page.tsx
+│   │   ├── documentos/page.tsx
+│   │   ├── usuarios/page.tsx
+│   │   └── auditoria/page.tsx
+│   ├── auth/                       Páginas públicas de auth
+│   │   ├── login/page.tsx
+│   │   ├── sign-up/page.tsx
+│   │   ├── sign-up-success/page.tsx
+│   │   ├── forgot-password/page.tsx
+│   │   ├── update-password/page.tsx
+│   │   ├── confirm/route.ts        Handler de email confirmation
+│   │   └── error/page.tsx
 │   ├── globals.css                 Tema CSS variables (paleta CHFM)
 │   ├── layout.tsx                  Layout raíz (providers, fuente, metadata)
 │   └── page.tsx                    Landing pública
 ├── components/
 │   ├── ui/                         shadcn/ui (no editar a mano)
-│   ├── auth-button.tsx             Botón de auth para topbar
-│   ├── login-form.tsx              Formularios de auth de la plantilla
-│   ├── sign-up-form.tsx            (a traducir en Fase 1)
+│   ├── layout/
+│   │   ├── app-sidebar.tsx         Sidebar con nav filtrada por rol
+│   │   ├── user-menu.tsx           Dropdown usuario (logout, perfil)
+│   │   └── page-header.tsx         Header consistente por módulo
+│   ├── auth-button.tsx             Botón de auth para landing
+│   ├── login-form.tsx              Formularios de auth (en español)
+│   ├── sign-up-form.tsx
 │   ├── forgot-password-form.tsx
 │   ├── update-password-form.tsx
 │   ├── logout-button.tsx
 │   └── theme-switcher.tsx          Toggle de tema claro/oscuro
 ├── lib/
-│   ├── supabase/                   Clientes Supabase (browser, server, proxy)
+│   ├── supabase/                   Clientes Supabase tipados (browser, server, proxy)
+│   ├── auth/                       getCurrentProfile, requireProfile, requireModule, permissions
 │   └── utils.ts                    cn() helper + hasEnvVars
+├── types/
+│   └── database.ts                 Tipos generados a mano del esquema Postgres
 ├── supabase/
-│   ├── migrations/                 SQL versionado (vacío hasta Fase 1)
+│   ├── migrations/
+│   │   ├── 0001_schema.sql         Tablas + enums + índices + FTS
+│   │   └── 0002_rls.sql            RLS + helpers + handle_new_user + audit immutable
 │   └── README.md                   Documentación del esquema
-├── proxy.ts                        Middleware de Next.js 16 (renombrado en v16)
+├── proxy.ts                        Middleware de Next.js 16 (sesión + redirects por auth)
 ├── next.config.ts
 ├── tailwind.config.ts
 ├── tsconfig.json
@@ -120,14 +159,54 @@ chfm-app/
 Estos pasos no los puede hacer el agente — requieren cuentas propias:
 
 ### Antes de Fase 1
-- [ ] Crear proyecto en Supabase y obtener las 3 keys.
-- [ ] Llenar `.env.local` con esas keys.
-- [ ] (Opcional) Instalar [Supabase CLI](https://supabase.com/docs/guides/cli) para correr migraciones desde tu máquina:
-  ```bash
-  npm install -g supabase
-  supabase login
-  supabase link --project-ref <project-ref-del-dashboard>
-  ```
+- [x] Crear proyecto en Supabase y obtener las 3 keys.
+- [x] Llenar `.env.local` con esas keys.
+
+### Después de Fase 1 (para que el sistema funcione end-to-end)
+
+**Aplicar las migraciones SQL** (una sola vez):
+
+Opción A — Supabase Studio (más rápido):
+1. Abrir [app.supabase.com](https://app.supabase.com) → proyecto → **SQL Editor**.
+2. Pegar el contenido de `supabase/migrations/0001_schema.sql` y ejecutar.
+3. Pegar el contenido de `supabase/migrations/0002_rls.sql` y ejecutar.
+4. Verificar en **Table Editor** que aparecen las 7 tablas (profiles, budget, pacc, procesos, proceso_historial, documentos, audit_log).
+
+Opción B — Supabase CLI:
+```bash
+npm install -g supabase
+supabase login
+supabase link --project-ref asqcmtdvzfkfgtjqnnjh
+supabase db push
+```
+
+**Crear los 4 usuarios semilla** (manual en Studio):
+1. En Supabase Studio → **Authentication** → **Users** → **Add user** → **Create new user**.
+2. Crear estos 4 usuarios (marcar **Auto Confirm User**):
+
+| Email | Password | Rol asignar después |
+|---|---|---|
+| `admin@chfm.gob.hn` | (mínimo 12 caracteres) | admin |
+| `operativo@chfm.gob.hn` | (mínimo 12 caracteres) | editor |
+| `visor@chfm.gob.hn` | (mínimo 12 caracteres) | viewer |
+| `gerencia@chfm.gob.hn` | (mínimo 12 caracteres) | gerencia |
+
+3. Después de crearlos, ir al **SQL Editor** y ejecutar:
+```sql
+update public.profiles set role = 'admin'    where username = 'admin';
+update public.profiles set role = 'editor'   where username = 'operativo';
+update public.profiles set role = 'viewer'   where username = 'visor';
+update public.profiles set role = 'gerencia' where username = 'gerencia';
+```
+
+(El trigger `handle_new_user` los crea automáticamente con rol `viewer` por defecto; estos `UPDATE` los promueven.)
+
+**Verificar end-to-end**:
+- `npm run dev`
+- Ir a [http://localhost:3000](http://localhost:3000) → debería redirigir a `/auth/login`.
+- Login como `admin@chfm.gob.hn` → debería ir a `/dashboard` y mostrar los 8 items en el sidebar.
+- Logout → login como `visor@chfm.gob.hn` → debería ver solo Dashboard y Reportes.
+- Probar entrar directo a `/usuarios` como visor → debería redirigir a `/dashboard` (bloqueo por `requireModule`).
 
 ### Antes de subir a producción (Fase 5)
 - [ ] Crear cuenta en Vercel, conectar este repo de GitHub.
