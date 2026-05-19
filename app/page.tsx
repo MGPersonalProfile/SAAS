@@ -40,16 +40,16 @@ export default function Home() {
               y los procesos de compra del Centro Hospitalario.
             </p>
             <p className="text-muted-foreground">
-              Fase 0 — Proyecto inicializado. Los módulos (Dashboard,
-              Presupuesto, PACC, Compras, Reportes, Documentos, Usuarios,
-              Auditoría) se construirán en las siguientes fases.
+              Si ya tienes una cuenta, ingresa con tu correo y contraseña. Si
+              no, solicita acceso y un administrador te asignará el rol
+              correspondiente.
             </p>
             <div className="flex gap-2 pt-2">
               <Button asChild>
                 <Link href="/auth/login">Ingresar</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/auth/sign-up">Crear cuenta</Link>
+                <Link href="/auth/sign-up">Solicitar acceso</Link>
               </Button>
             </div>
           </CardContent>
