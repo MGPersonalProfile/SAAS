@@ -1,14 +1,39 @@
+import {
+  Wallet,
+  AlertTriangle,
+  ListChecks,
+  Activity,
+  CheckCircle2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { BudgetChart } from "@/components/dashboard/budget-chart";
+import { ProcesosChart } from "@/components/dashboard/procesos-chart";
 import { requireModule } from "@/lib/auth";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
+import { getDashboardData } from "@/lib/db/dashboard";
+import { money, moneyCompact, number } from "@/lib/format";
 
-export const metadata = {
-  title: "Dashboard",
-};
+export const metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const profile = await requireModule("dashboard");
+  const data = await getDashboardData();
+
+  const presupuestoVigente =
+    data.budget.find((b) => b.concepto === "Presupuesto vigente")?.monto ?? 0;
+  const disponibleReal =
+    data.budget.find((b) => b.concepto === "Disponible real estimado")?.monto ??
+    0;
+  const disponibleSiafi =
+    data.budget.find((b) => b.concepto === "Disponible SIAFI")?.monto ?? 0;
+
+  const ejecutado = Number(presupuestoVigente) - Number(disponibleSiafi);
+  const ejecutadoPct =
+    Number(presupuestoVigente) > 0
+      ? (ejecutado / Number(presupuestoVigente)) * 100
+      : 0;
 
   return (
     <>
@@ -18,69 +43,68 @@ export default async function DashboardPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Presupuesto vigente"
+          value={moneyCompact(Number(presupuestoVigente))}
+          hint={money(Number(presupuestoVigente))}
+          Icon={Wallet}
+        />
+        <StatCard
+          label="Disponible real"
+          value={moneyCompact(Number(disponibleReal))}
+          hint={`Ejecución ${ejecutadoPct.toFixed(1)}%`}
+          Icon={Activity}
+          accent={ejecutadoPct > 80 ? "warning" : "default"}
+        />
+        <StatCard
+          label="Total PACC"
+          value={moneyCompact(data.pacc.total)}
+          hint={`${number(data.pacc.count)} líneas`}
+          Icon={ListChecks}
+        />
+        <StatCard
+          label="Procesos activos"
+          value={number(data.procesos.activos)}
+          hint={
+            data.procesos.observados > 0
+              ? `${data.procesos.observados} observados`
+              : `${data.procesos.total} totales`
+          }
+          Icon={data.procesos.observados > 0 ? AlertTriangle : CheckCircle2}
+          accent={data.procesos.observados > 0 ? "warning" : "success"}
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium uppercase text-muted-foreground">
-              Presupuesto vigente
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Presupuesto por concepto</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">L —</div>
-            <p className="text-xs text-muted-foreground mt-1">Sin datos</p>
+            {data.budget.length > 0 ? (
+              <BudgetChart
+                data={data.budget.map((b) => ({
+                  concepto: b.concepto,
+                  monto: Number(b.monto),
+                }))}
+              />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No hay partidas presupuestarias registradas.
+              </p>
+            )}
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium uppercase text-muted-foreground">
-              Total PACC
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Procesos por estado</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">L —</div>
-            <p className="text-xs text-muted-foreground mt-1">Sin datos</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium uppercase text-muted-foreground">
-              Procesos activos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">—</div>
-            <p className="text-xs text-muted-foreground mt-1">Sin datos</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium uppercase text-muted-foreground">
-              Procesos observados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">—</div>
-            <p className="text-xs text-muted-foreground mt-1">Sin datos</p>
+            <ProcesosChart data={data.procesos.porEstado} />
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Fase 1 completa</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p>
-            Autenticación, roles, layout autenticado y permisos por módulo
-            ya están funcionando. El sidebar muestra solo los módulos que tu
-            rol puede acceder.
-          </p>
-          <p className="text-muted-foreground">
-            Próxima fase: poblar la base con presupuesto y PACC, agregar
-            triggers de auditoría e historial de procesos, y empezar los
-            módulos con datos reales.
-          </p>
-        </CardContent>
-      </Card>
     </>
   );
 }

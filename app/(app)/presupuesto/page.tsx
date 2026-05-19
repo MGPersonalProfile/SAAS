@@ -1,11 +1,16 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
+import { BudgetTable } from "@/components/presupuesto/budget-table";
 import { requireModule } from "@/lib/auth";
+import { roleCanWrite } from "@/lib/auth/permissions";
+import { listBudget } from "@/lib/db/budget";
 
 export const metadata = { title: "Presupuesto" };
 
 export default async function PresupuestoPage() {
-  await requireModule("presupuesto");
+  const profile = await requireModule("presupuesto");
+  const rows = await listBudget();
+
   return (
     <>
       <PageHeader
@@ -13,8 +18,12 @@ export default async function PresupuestoPage() {
         description="Partidas presupuestarias del CHFM."
       />
       <Card>
-        <CardContent className="py-12 text-center text-sm text-muted-foreground">
-          Módulo en construcción. Se implementa en Fase 3.
+        <CardContent className="pt-6 space-y-4">
+          <BudgetTable
+            rows={rows}
+            canWrite={roleCanWrite(profile.role)}
+            canDelete={profile.role === "admin"}
+          />
         </CardContent>
       </Card>
     </>
