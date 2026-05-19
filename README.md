@@ -43,7 +43,13 @@ Reescritura moderna del prototipo Python + SQLite que vive en `../CHFM_Sistema_P
 - `proxy.ts` redirige `/` y `/auth/login` a `/dashboard` si hay sesión, y a `/auth/login` si no hay sesión en ruta privada.
 - Formularios de auth traducidos: login, sign-up (con nombre completo + validación de 12 caracteres), forgot-password, update-password, sign-up-success, error.
 
-**Próximo: Fase 2** — Aplicar migraciones, importar seed del PACC (593 líneas), triggers de historial de procesos y `updated_at` automático.
+**Fase 2 — Triggers de negocio + seed de datos** completada:
+- [0003_triggers.sql](supabase/migrations/0003_triggers.sql): trigger `set_updated_at` (en `budget` y `procesos`), trigger `proceso_track_estado_change` que registra cada cambio de estado (INSERT y UPDATE) en `proceso_historial`, RPC `change_proceso_estado(id, estado, comentario)` para cambios desde la app pasando comentario vía variable de sesión.
+- [seed-pacc.mjs](supabase/seed-pacc.mjs): script Node que lee el `seed_pacc.json` del prototipo y genera el SQL.
+- [0004_seed.sql](supabase/migrations/0004_seed.sql) generado: 5 conceptos de presupuesto inicial + 593 líneas del PACC (total **L 260,297,850**), con `ON CONFLICT` idempotente.
+- `types/database.ts` actualizado con la firma de `change_proceso_estado`.
+
+**Próximo: Fase 3** — Módulos core con datos reales. Dashboard con métricas en tiempo real, Presupuesto CRUD, PACC con búsqueda y filtros, Compras con workflow de estados, Reportes CSV+PDF.
 
 ## Cómo correr el proyecto localmente
 
@@ -168,9 +174,15 @@ Estos pasos no los puede hacer el agente — requieren cuentas propias:
 
 Opción A — Supabase Studio (más rápido):
 1. Abrir [app.supabase.com](https://app.supabase.com) → proyecto → **SQL Editor**.
-2. Pegar el contenido de `supabase/migrations/0001_schema.sql` y ejecutar.
-3. Pegar el contenido de `supabase/migrations/0002_rls.sql` y ejecutar.
-4. Verificar en **Table Editor** que aparecen las 7 tablas (profiles, budget, pacc, procesos, proceso_historial, documentos, audit_log).
+2. Pegar y ejecutar **en orden**:
+   1. `supabase/migrations/0001_schema.sql` — tablas, enums, índices.
+   2. `supabase/migrations/0002_rls.sql` — RLS, helpers, triggers de auth/audit.
+   3. `supabase/migrations/0003_triggers.sql` — `updated_at`, tracking de estado, RPC.
+   4. `supabase/migrations/0004_seed.sql` — presupuesto inicial + 593 líneas PACC.
+3. Verificar en **Table Editor**:
+   - 7 tablas presentes.
+   - `budget`: 5 filas.
+   - `pacc`: 593 filas (`select count(*), sum(valor) from pacc;` debe dar `593 | 260297850.00`).
 
 Opción B — Supabase CLI:
 ```bash

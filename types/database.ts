@@ -318,6 +318,14 @@ export interface Database {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      change_proceso_estado: {
+        Args: {
+          p_proceso_id: number;
+          p_estado_nuevo: ProcesoEstado;
+          p_comentario?: string | null;
+        };
+        Returns: void;
+      };
     };
     Enums: {
       user_role: UserRole;
