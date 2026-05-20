@@ -49,7 +49,26 @@ Reescritura moderna del prototipo Python + SQLite que vive en `../CHFM_Sistema_P
 - [0004_seed.sql](supabase/migrations/0004_seed.sql) generado: 5 conceptos de presupuesto inicial + 593 líneas del PACC (total **L 260,297,850**), con `ON CONFLICT` idempotente.
 - `types/database.ts` actualizado con la firma de `change_proceso_estado`.
 
-**Próximo: Fase 3** — Módulos core con datos reales. Dashboard con métricas en tiempo real, Presupuesto CRUD, PACC con búsqueda y filtros, Compras con workflow de estados, Reportes CSV+PDF.
+**Fase 3 — Módulos core con datos reales** completada:
+- **Dashboard**: 4 KPI cards (presupuesto vigente, disponible real con % de ejecución, total PACC, procesos activos+observados), bar charts de presupuesto por concepto y procesos por estado (Recharts).
+- **Presupuesto**: tabla CRUD con dialog form (react-hook-form + Zod), edit por fila, eliminación solo admin. Cada acción registra en `audit_log`.
+- **PACC**: tabla paginada (25/pág) con búsqueda ilike, filtros por mes/modalidad/fuente desde searchParams. Vista de cards en móvil. Export CSV de la selección actual.
+- **Compras**: listado con filtros (búsqueda, estado, prioridad). Detalle con tabs (Info / Historial / Documentos). Crear y editar procesos. Cambio de estado vía RPC `change_proceso_estado` con comentario obligatorio que queda en el historial.
+- **Reportes**: cards para descargar Reporte Ejecutivo PDF (generado con `@react-pdf/renderer`), PACC CSV, Procesos CSV, Presupuesto CSV.
+
+**Fase 4 — Documentos, Auditoría, Usuarios** completada:
+- **Documentos**: bucket `documentos` privado en Supabase Storage (creado vía API). Componente upload con drag&drop (max 10 MB), tipos permitidos PDF/imágenes/Office. Tab "Documentos" en cada proceso. Página global `/documentos` con últimos 100 archivos. Descargas vía URL firmada de 5 min. Eliminación solo admin.
+- **Auditoría**: tabla con filtros por usuario, módulo y rango de fechas. Paginación. Export CSV. Visible solo para admin/gerencia (RLS).
+- **Usuarios**: panel admin con tabla que muestra perfil + email + última sesión (vía `auth.admin.listUsers()`). Crear usuario con email confirmado y rol. Cambio de rol inline. Activar/desactivar. Generar enlace de reset de contraseña. Auto-protección: no puedes quitarte tu propio rol admin ni desactivarte.
+
+**API routes** (`app/api/`):
+- `GET /api/pacc/export?...filters` — CSV
+- `GET /api/procesos/export` — CSV
+- `GET /api/budget/export` — CSV
+- `GET /api/audit/export?...filters` — CSV
+- `GET /api/reportes/pdf` — PDF ejecutivo
+
+**Próximo: Fase 5** — Endurecimiento (CSP headers, rate limiting, Cloudflare WAF), tests E2E, branding y documentación de usuario.
 
 ## Cómo correr el proyecto localmente
 
@@ -179,10 +198,16 @@ Opción A — Supabase Studio (más rápido):
    2. `supabase/migrations/0002_rls.sql` — RLS, helpers, triggers de auth/audit.
    3. `supabase/migrations/0003_triggers.sql` — `updated_at`, tracking de estado, RPC.
    4. `supabase/migrations/0004_seed.sql` — presupuesto inicial + 593 líneas PACC.
+   5. `supabase/migrations/0005_storage.sql` — políticas RLS del bucket `documentos`.
 3. Verificar en **Table Editor**:
    - 7 tablas presentes.
    - `budget`: 5 filas.
    - `pacc`: 593 filas (`select count(*), sum(valor) from pacc;` debe dar `593 | 260297850.00`).
+4. En **Storage**, el bucket `documentos` debería estar creado (lo creó el script de fase 4). Si no aparece, ejecutar:
+   ```sql
+   insert into storage.buckets (id, name, public, file_size_limit)
+   values ('documentos','documentos',false, 10485760);
+   ```
 
 Opción B — Supabase CLI:
 ```bash

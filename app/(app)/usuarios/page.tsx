@@ -1,11 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
+import { UsersTable } from "@/components/usuarios/users-table";
 import { requireModule } from "@/lib/auth";
+import { listUsers } from "@/lib/db/users";
 
 export const metadata = { title: "Usuarios" };
 
 export default async function UsuariosPage() {
-  await requireModule("usuarios");
+  const profile = await requireModule("usuarios");
+  const users = await listUsers();
+
   return (
     <>
       <PageHeader
@@ -13,8 +17,8 @@ export default async function UsuariosPage() {
         description="Gestión de cuentas, roles y estado activo."
       />
       <Card>
-        <CardContent className="py-12 text-center text-sm text-muted-foreground">
-          Módulo en construcción. Se implementa en Fase 4.
+        <CardContent className="pt-6 space-y-4">
+          <UsersTable rows={users} currentUserId={profile.id} />
         </CardContent>
       </Card>
     </>
