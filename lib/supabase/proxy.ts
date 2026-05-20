@@ -43,9 +43,10 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isAuthRoute = path.startsWith("/auth") || path.startsWith("/login");
   const isLanding = path === "/";
+  const isOffline = path === "/offline";
 
   // Usuario no autenticado intentando ver una ruta privada → /auth/login
-  if (!user && !isAuthRoute && !isLanding) {
+  if (!user && !isAuthRoute && !isLanding && !isOffline) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);

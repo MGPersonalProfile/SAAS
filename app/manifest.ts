@@ -13,6 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#ffffff",
     theme_color: "#0b3d62",
     lang: "es",
+    dir: "ltr",
     categories: ["business", "productivity", "government"],
     icons: [
       {
@@ -22,10 +23,42 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "any",
       },
       {
+        src: "/icons/maskable",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
         src: "/apple-icon",
         sizes: "180x180",
         type: "image/png",
         purpose: "any",
+      },
+    ],
+    shortcuts: [
+      {
+        name: "Dashboard",
+        short_name: "Dashboard",
+        description: "Vista ejecutiva con KPIs y alertas.",
+        url: "/dashboard",
+      },
+      {
+        name: "Nuevo proceso de compra",
+        short_name: "Nuevo proceso",
+        description: "Crea un nuevo proceso de compra.",
+        url: "/compras/nuevo",
+      },
+      {
+        name: "Alertas",
+        short_name: "Alertas",
+        description: "Detección de posible fraccionamiento.",
+        url: "/alertas",
+      },
+      {
+        name: "PACC",
+        short_name: "PACC",
+        description: "Plan Anual de Compras y Contrataciones.",
+        url: "/pacc",
       },
     ],
   };

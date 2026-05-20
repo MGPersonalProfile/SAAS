@@ -1,22 +1,24 @@
 // CHFM Service Worker
-// Estrategia: network-first para datos (rutas con auth), cache-first para assets estáticos.
-// Mantén la versión sincronizada para invalidar caches en deploys.
+// - network-first para HTML (con fallback a cache + página offline branded)
+// - cache-first para assets estáticos de Next.js, iconos y fuentes
+// - excluye /api/* y /auth/* del cache (siempre pedir red)
+// - update flow: NO skipWaiting automático; espera mensaje del cliente para activar nueva versión
 
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `chfm-static-${VERSION}`;
 const RUNTIME_CACHE = `chfm-runtime-${VERSION}`;
 
-// Recursos del shell que cacheamos en install (mínimo lo necesario para que
-// la app abra offline mostrando el layout y un mensaje "sin conexión").
-const SHELL_ASSETS = ["/auth/login"];
+const OFFLINE_URL = "/offline";
+const SHELL_ASSETS = ["/auth/login", OFFLINE_URL];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(SHELL_ASSETS).catch(() => undefined))
-      .then(() => self.skipWaiting()),
+      .then((cache) => cache.addAll(SHELL_ASSETS).catch(() => undefined)),
   );
+  // NO skipWaiting aquí — esperamos a que el cliente lo pida explícitamente
+  // (vía postMessage SKIP_WAITING) para no recargar a media interacción.
 });
 
 self.addEventListener("activate", (event) => {
@@ -34,25 +36,31 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
-  // Solo manejamos GET del mismo origen.
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Nunca cachear rutas /api/* ni /auth/* (siempre pedir red).
+  // Nunca cachear API ni auth — siempre red, sin fallback.
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) {
     return;
   }
 
-  // Assets estáticos de Next.js: cache-first (immutable).
+  // Assets estáticos: cache-first (immutable).
   if (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname === "/manifest.webmanifest" ||
-    url.pathname.startsWith("/icon") ||
-    url.pathname.startsWith("/apple-icon") ||
+    url.pathname === "/icon" ||
+    url.pathname === "/apple-icon" ||
+    url.pathname.startsWith("/icons/") ||
     /\.(png|jpg|jpeg|svg|webp|woff2?|ico)$/i.test(url.pathname)
   ) {
     event.respondWith(
@@ -70,25 +78,31 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // HTML pages: network-first, fallback al último cacheado.
-  event.respondWith(
-    fetch(req)
-      .then((res) => {
-        if (res.ok && res.type === "basic") {
-          const clone = res.clone();
-          caches.open(RUNTIME_CACHE).then((c) => c.put(req, clone));
-        }
-        return res;
-      })
-      .catch(() =>
-        caches.match(req).then(
-          (cached) =>
-            cached ??
-            new Response(
-              `<!doctype html><html lang="es"><body style="font-family:system-ui;padding:2rem"><h1>Sin conexión</h1><p>El sistema CHFM no puede conectarse en este momento.</p></body></html>`,
-              { headers: { "Content-Type": "text/html; charset=utf-8" } },
-            ),
+  // HTML pages: network-first → cache → /offline.
+  if (req.mode === "navigate" || req.headers.get("accept")?.includes("text/html")) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok && res.type === "basic") {
+            const clone = res.clone();
+            caches.open(RUNTIME_CACHE).then((c) => c.put(req, clone));
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(req).then(
+            (cached) =>
+              cached ??
+              caches.match(OFFLINE_URL).then(
+                (off) =>
+                  off ??
+                  new Response("Sin conexión", {
+                    status: 503,
+                    headers: { "Content-Type": "text/plain; charset=utf-8" },
+                  }),
+              ),
+          ),
         ),
-      ),
-  );
+    );
+  }
 });
