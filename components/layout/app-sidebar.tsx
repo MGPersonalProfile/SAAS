@@ -11,6 +11,8 @@ import {
   Folder,
   Users,
   ShieldCheck,
+  AlertTriangle,
+  Upload,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -40,6 +42,8 @@ const MODULE_ICONS: Record<Module, LucideIcon> = {
   compras: ShoppingCart,
   reportes: FileBarChart,
   documentos: Folder,
+  alertas: AlertTriangle,
+  importar: Upload,
   usuarios: Users,
   auditoria: ShieldCheck,
 };
@@ -51,7 +55,9 @@ const NAV_ORDER: Module[] = [
   "compras",
   "documentos",
   "reportes",
+  "alertas",
   "auditoria",
+  "importar",
   "usuarios",
 ];
 

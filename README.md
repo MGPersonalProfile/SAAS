@@ -68,7 +68,16 @@ Reescritura moderna del prototipo Python + SQLite que vive en `../CHFM_Sistema_P
 - `GET /api/audit/export?...filters` — CSV
 - `GET /api/reportes/pdf` — PDF ejecutivo
 
-**Próximo: Fase 5** — Endurecimiento (CSP headers, rate limiting, Cloudflare WAF), tests E2E, branding y documentación de usuario.
+**Fase 5 — Endurecimiento** completada (capa de aplicación):
+- **Headers de seguridad** en [next.config.ts](next.config.ts): CSP estricto (default-src 'self' + Supabase + Google Fonts), HSTS 2 años con preload, X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy, Permissions-Policy bloqueando camera/mic/geolocation/etc.
+- **HARDENING.md**: checklist completo de los pasos manuales pendientes (Cloudflare WAF, MFA en Supabase, password policy, rate limits, backups, pen-test ligero).
+
+**Fase 6 — Inteligencia + Importación** parcial:
+- **Detección de fraccionamiento** ([lib/db/alertas.ts](lib/db/alertas.ts) + `/alertas`): heurística que detecta 3+ procesos con mismo responsable + mismo prefijo de objeto presupuestario en una ventana de 90 días sumando más de L 500,000. Visible para admin y gerencia.
+- **Importador CSV** (`/importar`): tabs separadas para Presupuesto SIAFI y PACC HonduCompras. Parseo con papaparse, validación Zod por fila, preview de las primeras 5 filas, advertencia de columnas faltantes/extras. Presupuesto hace upsert por concepto, PACC inserta como nuevas filas (con opción de reemplazo total solo para admin).
+- Pendientes para fase 6 plena: OCR en documentos, app móvil nativa, multi-tenant.
+
+**Próximo: producción real** — comprar dominio, configurar Cloudflare delante de Vercel siguiendo [HARDENING.md](HARDENING.md), Supabase Pro para PITR backups, capacitación a los 100 usuarios.
 
 ## Cómo correr el proyecto localmente
 

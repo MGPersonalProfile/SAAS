@@ -43,10 +43,10 @@ export function ProcesosChart({ data }: ProcesosChartProps) {
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 50 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.4)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in oklab, var(--border) 40%, transparent)" vertical={false} />
           <XAxis
             dataKey="estado"
-            stroke="hsl(var(--muted-foreground))"
+            stroke="var(--muted-foreground)"
             tick={{ fontSize: 11 }}
             interval={0}
             angle={-30}
@@ -55,14 +55,15 @@ export function ProcesosChart({ data }: ProcesosChartProps) {
           />
           <YAxis
             allowDecimals={false}
-            stroke="hsl(var(--muted-foreground))"
+            stroke="var(--muted-foreground)"
             tick={{ fontSize: 12 }}
           />
           <Tooltip
-            cursor={{ fill: "hsl(var(--accent) / 0.3)" }}
+            cursor={{ fill: "color-mix(in oklab, var(--accent) 30%, transparent)" }}
             contentStyle={{
-              backgroundColor: "hsl(var(--popover))",
-              border: "1px solid hsl(var(--border))",
+              backgroundColor: "var(--popover)",
+              border: "1px solid var(--border)",
+              color: "var(--popover-foreground)",
               borderRadius: 8,
               fontSize: 13,
             }}

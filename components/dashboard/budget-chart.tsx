@@ -39,25 +39,26 @@ export function BudgetChart({ data }: BudgetChartProps) {
           layout="vertical"
           margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
         >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border) / 0.4)" />
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="color-mix(in oklab, var(--border) 40%, transparent)" />
           <XAxis
             type="number"
             tickFormatter={(v) => moneyCompact(v)}
-            stroke="hsl(var(--muted-foreground))"
+            stroke="var(--muted-foreground)"
             tick={{ fontSize: 12 }}
           />
           <YAxis
             type="category"
             dataKey="name"
             width={140}
-            stroke="hsl(var(--muted-foreground))"
+            stroke="var(--muted-foreground)"
             tick={{ fontSize: 12 }}
           />
           <Tooltip
-            cursor={{ fill: "hsl(var(--accent) / 0.3)" }}
+            cursor={{ fill: "color-mix(in oklab, var(--accent) 30%, transparent)" }}
             contentStyle={{
-              backgroundColor: "hsl(var(--popover))",
-              border: "1px solid hsl(var(--border))",
+              backgroundColor: "var(--popover)",
+              border: "1px solid var(--border)",
+              color: "var(--popover-foreground)",
               borderRadius: 8,
               fontSize: 13,
             }}

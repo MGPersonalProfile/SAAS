@@ -12,6 +12,8 @@ export const MODULES = [
   "compras",
   "reportes",
   "documentos",
+  "alertas",
+  "importar",
   "usuarios",
   "auditoria",
 ] as const;
@@ -31,6 +33,8 @@ export const PERMISSIONS: Record<UserRole, ReadonlySet<Module>> = {
     "compras",
     "reportes",
     "documentos",
+    "alertas",
+    "importar",
     "usuarios",
     "auditoria",
   ]),
@@ -41,9 +45,10 @@ export const PERMISSIONS: Record<UserRole, ReadonlySet<Module>> = {
     "compras",
     "reportes",
     "documentos",
+    "importar",
   ]),
   viewer: new Set(["dashboard", "reportes"]),
-  gerencia: new Set(["dashboard", "reportes", "auditoria"]),
+  gerencia: new Set(["dashboard", "reportes", "alertas", "auditoria"]),
 };
 
 export function roleCanAccess(role: UserRole, module: Module): boolean {
@@ -78,6 +83,8 @@ export const MODULE_LABELS: Record<Module, string> = {
   compras: "Compras",
   reportes: "Reportes",
   documentos: "Documentos",
+  alertas: "Alertas",
+  importar: "Importar",
   usuarios: "Usuarios",
   auditoria: "Auditoría",
 };
