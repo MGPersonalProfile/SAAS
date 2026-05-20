@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { BudgetChart } from "@/components/dashboard/budget-chart";
 import { ProcesosChart } from "@/components/dashboard/procesos-chart";
+import { BudgetHealth } from "@/components/dashboard/budget-health";
 import { requireModule } from "@/lib/auth";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { getDashboardData } from "@/lib/db/dashboard";
@@ -40,6 +41,12 @@ export default async function DashboardPage() {
       <PageHeader
         title={`Hola, ${profile.full_name || profile.username}`}
         description={`Sesión iniciada como ${ROLE_LABELS[profile.role]}.`}
+      />
+
+      <BudgetHealth
+        presupuestoVigente={Number(presupuestoVigente)}
+        disponibleReal={Number(disponibleReal)}
+        disponibleSiafi={Number(disponibleSiafi)}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

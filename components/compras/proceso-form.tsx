@@ -22,6 +22,7 @@ import {
   type ProcesoInput,
 } from "@/lib/db/procesos-schema";
 import { createProceso, updateProceso } from "@/app/(app)/compras/actions";
+import { suggestModalidad, detectarUmbralCercano } from "@/lib/procurement";
 import type { Tables } from "@/types/database";
 
 interface ProcesoFormProps {
@@ -67,6 +68,9 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
 
   const prioridad = watch("prioridad");
   const estado = watch("estado");
+  const monto = watch("monto");
+  const modalidadSugerida = suggestModalidad(Number(monto || 0));
+  const alertaUmbral = detectarUmbralCercano(Number(monto || 0));
 
   function onSubmit(values: ProcesoInput) {
     setServerError(null);
@@ -113,6 +117,24 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
           />
           {errors.monto && (
             <p className="text-xs text-destructive">{errors.monto.message}</p>
+          )}
+          {modalidadSugerida && (
+            <p className="text-xs text-muted-foreground">
+              Modalidad sugerida:{" "}
+              <strong className="text-foreground">
+                {modalidadSugerida.nombre}
+              </strong>
+              {" · "}
+              {modalidadSugerida.razon}
+            </p>
+          )}
+          {alertaUmbral && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+              ⚠ El monto está cerca del umbral de{" "}
+              <strong>L {alertaUmbral.threshold.toLocaleString("en-US")}</strong>{" "}
+              para pasar a <strong>{alertaUmbral.proximaModalidad}</strong>.
+              Revisar si conviene una compra única en la modalidad superior.
+            </p>
           )}
         </div>
       </div>

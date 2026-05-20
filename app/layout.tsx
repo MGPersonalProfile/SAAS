@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -17,6 +18,22 @@ export const metadata: Metadata = {
   },
   description:
     "Sistema de gestión presupuestaria, PACC y procesos de compra del CHFM.",
+  applicationName: "CHFM",
+  appleWebApp: {
+    capable: true,
+    title: "CHFM",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0b3d62" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b3d62" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const inter = Inter({
@@ -41,6 +58,7 @@ export default function RootLayout({
         >
           <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
           <Toaster richColors closeButton position="top-right" />
+          <PwaRegister />
         </ThemeProvider>
       </body>
     </html>
