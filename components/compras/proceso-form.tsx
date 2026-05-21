@@ -60,11 +60,11 @@ export function ProcesoForm({ initial, initialPacc }: ProcesoFormProps) {
         }
       : {
           codigo: "",
-          pacc_id: null,
-          linea_pacc: "",
-          objeto: "",
+          pacc_id: initialPacc?.id ?? null,
+          linea_pacc: initialPacc?.linea ?? "",
+          objeto: initialPacc?.objeto ?? "",
           descripcion: "",
-          monto: 0,
+          monto: initialPacc?.valor != null ? Number(initialPacc.valor) : 0,
           estado: "Solicitud creada",
           responsable: "",
           prioridad: "Normal",
