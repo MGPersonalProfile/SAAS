@@ -23,7 +23,7 @@ export interface DashboardData {
 export async function getDashboardData(): Promise<DashboardData> {
   const supabase = await createClient();
 
-  const [budgetRes, paccCountRes, paccValoresRes, procesosRes] =
+  const [budgetViewRes, paccCountRes, paccValoresRes, procesosRes] =
     await Promise.all([
       // Lee de la vista, no de la tabla, para obtener los montos derivados
       // ya calculados (Comprometido, Ejecutado, Disponible real).
@@ -33,7 +33,18 @@ export async function getDashboardData(): Promise<DashboardData> {
       supabase.from("procesos").select("estado, monto"),
     ]);
 
-  const budget = budgetRes.data ?? [];
+  // Fallback si la migración 0006 no está aplicada todavía.
+  let budget: DashboardData["budget"];
+  if (budgetViewRes.error) {
+    const tableRes = await supabase.from("budget").select("*").order("id");
+    if (tableRes.error) throw tableRes.error;
+    budget = (tableRes.data ?? []).map((r) => ({
+      ...r,
+      tipo: "estatico" as const,
+    }));
+  } else {
+    budget = budgetViewRes.data ?? [];
+  }
   const paccCount = paccCountRes.count ?? 0;
   const paccTotal = (paccValoresRes.data ?? []).reduce(
     (sum, r) => sum + Number(r.valor ?? 0),
