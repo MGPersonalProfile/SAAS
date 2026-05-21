@@ -21,10 +21,12 @@ import {
 import { PageHeader } from "@/components/layout/page-header";
 import { EstadoBadge } from "@/components/compras/estado-badge";
 import { PaccDeleteButton } from "@/components/pacc/pacc-delete-button";
+import { PaccExecutionCard } from "@/components/pacc/pacc-execution-card";
 import { requireModule } from "@/lib/auth";
 import { roleCanWrite } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { listProcesosByPacc } from "@/lib/db/procesos";
+import { getPaccLineExecution } from "@/lib/db/pacc";
 import { money, dateOnly } from "@/lib/format";
 
 const MES_NOMBRES = [
@@ -65,7 +67,10 @@ export default async function PaccDetallePage({ params }: DetailProps) {
     .maybeSingle();
   if (!linea) notFound();
 
-  const procesos = await listProcesosByPacc(id);
+  const [procesos, execution] = await Promise.all([
+    listProcesosByPacc(id),
+    getPaccLineExecution(id),
+  ]);
   const canWrite = roleCanWrite(profile.role);
   const canDelete = profile.role === "admin";
   const mesLabel =
@@ -171,6 +176,8 @@ export default async function PaccDetallePage({ params }: DetailProps) {
           )}
         </CardContent>
       </Card>
+
+      <PaccExecutionCard execution={execution} />
 
       <Card>
         <CardHeader>

@@ -220,12 +220,24 @@ export function CsvImporter({
       )}
 
       {result && result.ok && (
-        <div className="flex items-center gap-2 rounded-md bg-emerald-50 border border-emerald-300 p-3 text-sm text-emerald-900">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>
-            Importación exitosa: <strong>{result.inserted}</strong> nuevos,{" "}
-            <strong>{result.updated}</strong> actualizados.
-          </span>
+        <div className="space-y-2 rounded-md bg-emerald-50 border border-emerald-300 p-3 text-sm text-emerald-900">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4" />
+            <span>
+              Importación exitosa: <strong>{result.inserted}</strong> nuevos,{" "}
+              <strong>{result.updated}</strong> actualizados.
+            </span>
+          </div>
+          {result.warnings && result.warnings.length > 0 && (
+            <ul className="space-y-1 border-t border-emerald-200 pt-2 text-xs text-emerald-800">
+              {result.warnings.map((w, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                  <span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

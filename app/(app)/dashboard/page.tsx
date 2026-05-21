@@ -11,6 +11,10 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { BudgetChart } from "@/components/dashboard/budget-chart";
 import { ProcesosChart } from "@/components/dashboard/procesos-chart";
 import { BudgetHealth } from "@/components/dashboard/budget-health";
+import { ModalidadChart } from "@/components/dashboard/modalidad-chart";
+import { TopPaccChart } from "@/components/dashboard/top-pacc-chart";
+import { ExecutionTimelineChart } from "@/components/dashboard/execution-timeline-chart";
+import { BackupInfoCard } from "@/components/dashboard/backup-info-card";
 import { requireModule } from "@/lib/auth";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { getDashboardData } from "@/lib/db/dashboard";
@@ -112,6 +116,37 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribución por modalidad de contratación</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ModalidadChart data={data.byModalidad} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top 10 líneas PACC con más ejecución</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TopPaccChart data={data.topPaccLines} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Ejecución mes a mes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ExecutionTimelineChart data={data.executionTimeline} />
+        </CardContent>
+      </Card>
+
+      <BackupInfoCard />
     </>
   );
 }

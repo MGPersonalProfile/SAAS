@@ -118,6 +118,19 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      pacc_execution_view: {
+        Row: {
+          pacc_id: number;
+          linea: string | null;
+          planeado: number | null;
+          comprometido: number;
+          ejecutado: number;
+          procesos_count: number;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       pacc: {
         Row: {
           id: number;

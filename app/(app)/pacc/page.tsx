@@ -8,7 +8,7 @@ import { PaccTable } from "@/components/pacc/pacc-table";
 import { PaccPagination } from "@/components/pacc/pacc-pagination";
 import { requireModule } from "@/lib/auth";
 import { roleCanWrite } from "@/lib/auth/permissions";
-import { listPacc, getPaccFacets } from "@/lib/db/pacc";
+import { listPacc, getPaccFacets, getPaccExecutionByIds } from "@/lib/db/pacc";
 import { money, number } from "@/lib/format";
 
 export const metadata = { title: "PACC" };
@@ -37,6 +37,10 @@ export default async function PaccPage({ searchParams }: PaccPageProps) {
     }),
     getPaccFacets(),
   ]);
+
+  const executionMap = await getPaccExecutionByIds(
+    result.rows.map((r) => r.id),
+  );
 
   const totalFiltradoValor = result.rows.reduce(
     (sum, r) => sum + Number(r.valor ?? 0),
@@ -94,7 +98,7 @@ export default async function PaccPage({ searchParams }: PaccPageProps) {
             </div>
           )}
 
-          <PaccTable rows={result.rows} />
+          <PaccTable rows={result.rows} executionMap={executionMap} />
 
           <PaccPagination
             page={result.page}
