@@ -166,6 +166,7 @@ export interface Database {
           id: number;
           codigo: string;
           linea_pacc: string | null;
+          pacc_id: number | null;
           objeto: string | null;
           descripcion: string | null;
           monto: number;
@@ -181,6 +182,7 @@ export interface Database {
           id?: number;
           codigo: string;
           linea_pacc?: string | null;
+          pacc_id?: number | null;
           objeto?: string | null;
           descripcion?: string | null;
           monto?: number;
@@ -196,6 +198,7 @@ export interface Database {
           id?: number;
           codigo?: string;
           linea_pacc?: string | null;
+          pacc_id?: number | null;
           objeto?: string | null;
           descripcion?: string | null;
           monto?: number;
@@ -207,7 +210,15 @@ export interface Database {
           updated_at?: string;
           updated_by?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "procesos_pacc_id_fkey";
+            columns: ["pacc_id"];
+            referencedRelation: "pacc";
+            referencedColumns: ["id"];
+            isOneToOne: false;
+          }
+        ];
       };
       proceso_historial: {
         Row: {

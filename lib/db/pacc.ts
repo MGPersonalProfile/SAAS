@@ -35,10 +35,13 @@ export async function listPacc(filters: PaccFilters = {}): Promise<PaccResult> {
 
   if (filters.q && filters.q.trim()) {
     const term = filters.q.trim();
-    // Buscar por descripcion, objeto o linea (ilike es suficiente; tsvector queda para más adelante).
-    query = query.or(
-      `descripcion.ilike.%${term}%,objeto.ilike.%${term}%,linea.ilike.%${term}%`,
-    );
+    // Búsqueda full-text en español sobre el campo search_vector definido en
+    // el esquema (descripcion + objeto + linea, con pesos A/B/C). Para
+    // tolerar consultas multi-palabra, transformamos a websearch syntax.
+    query = query.textSearch("search_vector", term, {
+      type: "websearch",
+      config: "spanish",
+    });
   }
   if (filters.mes) query = query.eq("mes", filters.mes);
   if (filters.modalidad) query = query.eq("modalidad", filters.modalidad);

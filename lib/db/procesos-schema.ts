@@ -22,6 +22,7 @@ export const procesoSchema = z.object({
     .trim()
     .min(3, "El código debe tener al menos 3 caracteres")
     .max(80, "Máximo 80 caracteres"),
+  pacc_id: z.number().int().positive().nullable().optional(),
   linea_pacc: z.string().trim().max(50).optional().or(z.literal("")),
   objeto: z.string().trim().max(50).optional().or(z.literal("")),
   descripcion: z

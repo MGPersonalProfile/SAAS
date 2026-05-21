@@ -31,7 +31,10 @@ export default async function EditarProcesoPage({ params }: EditarProps) {
       />
       <Card>
         <CardContent className="pt-6">
-          <ProcesoForm initial={result.proceso} />
+          <ProcesoForm
+            initial={result.proceso}
+            initialPacc={result.proceso.pacc ?? null}
+          />
         </CardContent>
       </Card>
     </>

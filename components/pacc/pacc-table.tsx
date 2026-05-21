@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -41,20 +42,46 @@ export function PaccTable({ rows }: PaccTableProps) {
             </TableHeader>
             <TableBody>
               {rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="font-mono text-xs">{row.linea}</TableCell>
-                  <TableCell className="font-mono text-xs">{row.objeto}</TableCell>
-                  <TableCell className="max-w-md">
-                    <div className="line-clamp-2 text-sm">{row.descripcion}</div>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer hover:bg-muted/40"
+                >
+                  <TableCell className="font-mono text-xs">
+                    <Link
+                      href={`/pacc/${row.id}`}
+                      className="block w-full hover:underline"
+                    >
+                      {row.linea}
+                    </Link>
                   </TableCell>
-                  <TableCell className="text-center">{row.mes}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <Link href={`/pacc/${row.id}`} className="block w-full">
+                      {row.objeto}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="max-w-md">
+                    <Link href={`/pacc/${row.id}`} className="block w-full">
+                      <div className="line-clamp-2 text-sm">
+                        {row.descripcion}
+                      </div>
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Link href={`/pacc/${row.id}`} className="block w-full">
+                      {row.mes}
+                    </Link>
+                  </TableCell>
                   <TableCell className="text-xs">
-                    <Badge variant="outline" className="font-normal">
-                      {row.modalidad}
-                    </Badge>
+                    <Link href={`/pacc/${row.id}`} className="block w-full">
+                      <Badge variant="outline" className="font-normal">
+                        {row.modalidad}
+                      </Badge>
+                    </Link>
                   </TableCell>
                   <TableCell className="text-right tabular-nums font-medium">
-                    {money(Number(row.valor))}
+                    <Link href={`/pacc/${row.id}`} className="block w-full">
+                      {money(Number(row.valor))}
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))}
@@ -63,12 +90,13 @@ export function PaccTable({ rows }: PaccTableProps) {
         </div>
       </div>
 
-      {/* Mobile: cards apiladas */}
+      {/* Mobile: cards apiladas, cada una clicable */}
       <div className="md:hidden space-y-3">
         {rows.map((row) => (
-          <div
+          <Link
             key={row.id}
-            className="rounded-lg border p-4 space-y-2 bg-card"
+            href={`/pacc/${row.id}`}
+            className="block rounded-lg border p-4 space-y-2 bg-card hover:border-primary transition"
           >
             <div className="flex items-start justify-between gap-2">
               <span className="text-xs font-mono text-muted-foreground">
@@ -87,7 +115,7 @@ export function PaccTable({ rows }: PaccTableProps) {
                 {row.modalidad}
               </Badge>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </>

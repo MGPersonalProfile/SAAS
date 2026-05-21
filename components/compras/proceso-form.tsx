@@ -23,16 +23,19 @@ import {
 } from "@/lib/db/procesos-schema";
 import { createProceso, updateProceso } from "@/app/(app)/compras/actions";
 import { suggestModalidad, detectarUmbralCercano } from "@/lib/procurement";
+import { PaccLinePicker, type PaccLineLite } from "./pacc-line-picker";
 import type { Tables } from "@/types/database";
 
 interface ProcesoFormProps {
   initial?: Tables<"procesos"> | null;
+  initialPacc?: PaccLineLite | null;
 }
 
-export function ProcesoForm({ initial }: ProcesoFormProps) {
+export function ProcesoForm({ initial, initialPacc }: ProcesoFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [pacc, setPacc] = useState<PaccLineLite | null>(initialPacc ?? null);
   const isEdit = !!initial;
 
   const {
@@ -46,6 +49,7 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
     defaultValues: initial
       ? {
           codigo: initial.codigo,
+          pacc_id: initial.pacc_id,
           linea_pacc: initial.linea_pacc ?? "",
           objeto: initial.objeto ?? "",
           descripcion: initial.descripcion ?? "",
@@ -56,6 +60,7 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
         }
       : {
           codigo: "",
+          pacc_id: null,
           linea_pacc: "",
           objeto: "",
           descripcion: "",
@@ -94,6 +99,20 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
           ? ("ejecuta" as const)
           : ("sin_impacto" as const)
       : null;
+
+  function handlePaccChange(line: PaccLineLite | null) {
+    setPacc(line);
+    setValue("pacc_id", line ? line.id : null, { shouldDirty: true });
+    setValue("linea_pacc", line?.linea ?? "", { shouldDirty: true });
+    if (line?.objeto) {
+      setValue("objeto", line.objeto, { shouldDirty: true });
+    }
+    // Pre-rellenar monto solo si está en 0 (alta) o vacío. Si el usuario ya
+    // editó un monto distinto, no lo pisamos.
+    if (line?.valor != null && (!monto || montoNumber === 0)) {
+      setValue("monto", Number(line.valor), { shouldDirty: true });
+    }
+  }
 
   function onSubmit(values: ProcesoInput) {
     setServerError(null);
@@ -176,21 +195,26 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label>Línea del PACC</Label>
+        <PaccLinePicker value={pacc} onChange={handlePaccChange} />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="linea_pacc">Línea PACC</Label>
-          <Input
-            id="linea_pacc"
-            {...register("linea_pacc")}
-            placeholder="Ej. 142"
-          />
-        </div>
         <div className="space-y-2">
           <Label htmlFor="objeto">Objeto presupuestario</Label>
           <Input
             id="objeto"
             {...register("objeto")}
             placeholder="Ej. 21200"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="responsable">Responsable</Label>
+          <Input
+            id="responsable"
+            {...register("responsable")}
+            placeholder="Nombre o área"
           />
         </div>
       </div>
@@ -211,7 +235,7 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         {!isEdit && (
           <div className="space-y-2">
             <Label>Estado inicial</Label>
@@ -252,15 +276,6 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="space-y-2 sm:col-span-1">
-          <Label htmlFor="responsable">Responsable</Label>
-          <Input
-            id="responsable"
-            {...register("responsable")}
-            placeholder="Nombre o área"
-          />
         </div>
       </div>
 

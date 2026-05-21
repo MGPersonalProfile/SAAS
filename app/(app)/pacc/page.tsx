@@ -1,11 +1,13 @@
+import Link from "next/link";
+import { Download, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { PaccFilters } from "@/components/pacc/pacc-filters";
 import { PaccTable } from "@/components/pacc/pacc-table";
 import { PaccPagination } from "@/components/pacc/pacc-pagination";
 import { requireModule } from "@/lib/auth";
+import { roleCanWrite } from "@/lib/auth/permissions";
 import { listPacc, getPaccFacets } from "@/lib/db/pacc";
 import { money, number } from "@/lib/format";
 
@@ -22,7 +24,7 @@ interface PaccPageProps {
 }
 
 export default async function PaccPage({ searchParams }: PaccPageProps) {
-  await requireModule("pacc");
+  const profile = await requireModule("pacc");
   const sp = await searchParams;
 
   const [result, facets] = await Promise.all([
@@ -59,12 +61,22 @@ export default async function PaccPage({ searchParams }: PaccPageProps) {
           result.total,
         )} líneas`}
         actions={
-          <Button asChild variant="outline" size="sm">
-            <a href={exportUrl}>
-              <Download className="mr-1 h-4 w-4" />
-              Exportar CSV
-            </a>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {roleCanWrite(profile.role) && (
+              <Button asChild size="sm">
+                <Link href="/pacc/nuevo">
+                  <Plus className="mr-1 h-4 w-4" />
+                  Nueva línea
+                </Link>
+              </Button>
+            )}
+            <Button asChild variant="outline" size="sm">
+              <a href={exportUrl}>
+                <Download className="mr-1 h-4 w-4" />
+                Exportar CSV
+              </a>
+            </Button>
+          </div>
         }
       />
 

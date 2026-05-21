@@ -36,6 +36,7 @@ export async function createProceso(input: ProcesoInput): Promise<ActionResult> 
     .from("procesos")
     .insert({
       codigo: parsed.data.codigo,
+      pacc_id: parsed.data.pacc_id ?? null,
       linea_pacc: parsed.data.linea_pacc || null,
       objeto: parsed.data.objeto || null,
       descripcion: parsed.data.descripcion,
@@ -90,6 +91,7 @@ export async function updateProceso(
     .from("procesos")
     .update({
       codigo: parsed.data.codigo,
+      pacc_id: parsed.data.pacc_id ?? null,
       linea_pacc: parsed.data.linea_pacc || null,
       objeto: parsed.data.objeto || null,
       descripcion: parsed.data.descripcion,

@@ -101,7 +101,31 @@ export default async function ProcesoDetallePage({
                   <Field label="Responsable">
                     {proceso.responsable ?? "—"}
                   </Field>
-                  <Field label="Línea PACC">{proceso.linea_pacc ?? "—"}</Field>
+                  <Field label="Línea PACC">
+                    {proceso.pacc ? (
+                      <Link
+                        href={`/pacc/${proceso.pacc.id}`}
+                        className="text-primary hover:underline"
+                      >
+                        <span className="font-mono text-xs">
+                          L{proceso.pacc.linea}
+                        </span>
+                        <span className="ml-1 text-sm">
+                          ·{" "}
+                          {(proceso.pacc.descripcion ?? "").slice(0, 50)}
+                          {(proceso.pacc.descripcion?.length ?? 0) > 50
+                            ? "…"
+                            : ""}
+                        </span>
+                      </Link>
+                    ) : proceso.linea_pacc ? (
+                      <span className="text-muted-foreground">
+                        {proceso.linea_pacc} (sin vínculo en PACC)
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </Field>
                   <Field label="Objeto presupuestario">
                     {proceso.objeto ?? "—"}
                   </Field>
