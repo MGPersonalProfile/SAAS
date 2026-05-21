@@ -19,6 +19,8 @@ export type Json =
 
 export type UserRole = "admin" | "editor" | "viewer" | "gerencia";
 
+export type BudgetTipo = "estatico" | "derivado";
+
 export type ProcesoEstado =
   | "Solicitud creada"
   | "Validado PACC"
@@ -80,6 +82,7 @@ export interface Database {
           nota: string | null;
           updated_at: string;
           updated_by: string | null;
+          tipo: BudgetTipo;
         };
         Insert: {
           id?: number;
@@ -88,6 +91,7 @@ export interface Database {
           nota?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          tipo?: BudgetTipo;
         };
         Update: {
           id?: number;
@@ -96,7 +100,22 @@ export interface Database {
           nota?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          tipo?: BudgetTipo;
         };
+        Relationships: [];
+      };
+      budget_view: {
+        Row: {
+          id: number;
+          concepto: string;
+          monto: number;
+          nota: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          tipo: BudgetTipo;
+        };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       pacc: {
@@ -326,11 +345,16 @@ export interface Database {
         };
         Returns: void;
       };
+      budget_derivado_value: {
+        Args: { p_concepto: string };
+        Returns: number;
+      };
     };
     Enums: {
       user_role: UserRole;
       proceso_estado: ProcesoEstado;
       proceso_prioridad: ProcesoPrioridad;
+      budget_tipo: BudgetTipo;
     };
     CompositeTypes: Record<string, never>;
   };

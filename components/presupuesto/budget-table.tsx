@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -12,6 +13,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -25,16 +31,18 @@ import { money, dateTime } from "@/lib/format";
 import { deleteBudget } from "@/app/(app)/presupuesto/actions";
 import type { Tables } from "@/types/database";
 
+type BudgetRow = Tables<"budget_view">;
+
 interface BudgetTableProps {
-  rows: Tables<"budget">[];
+  rows: BudgetRow[];
   canWrite: boolean;
   canDelete: boolean;
 }
 
 export function BudgetTable({ rows, canWrite, canDelete }: BudgetTableProps) {
   const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<Tables<"budget"> | null>(null);
-  const [deleting, setDeleting] = useState<Tables<"budget"> | null>(null);
+  const [editing, setEditing] = useState<BudgetRow | null>(null);
+  const [deleting, setDeleting] = useState<BudgetRow | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function openCreate() {
@@ -42,7 +50,7 @@ export function BudgetTable({ rows, canWrite, canDelete }: BudgetTableProps) {
     setFormOpen(true);
   }
 
-  function openEdit(row: Tables<"budget">) {
+  function openEdit(row: BudgetRow) {
     setEditing(row);
     setFormOpen(true);
   }
@@ -96,44 +104,74 @@ export function BudgetTable({ rows, canWrite, canDelete }: BudgetTableProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="font-medium">{row.concepto}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {money(Number(row.monto))}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-                    {row.nota ?? "—"}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
-                    {dateTime(row.updated_at)}
-                  </TableCell>
-                  {canWrite && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(row)}
-                          aria-label="Editar"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        {canDelete && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleting(row)}
-                            aria-label="Eliminar"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+              rows.map((row) => {
+                const isDerivado = row.tipo === "derivado";
+                return (
+                  <TableRow
+                    key={row.id}
+                    className={isDerivado ? "bg-muted/30" : undefined}
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{row.concepto}</span>
+                        {isDerivado && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge
+                                variant="outline"
+                                className="font-normal text-xs gap-1 cursor-help"
+                              >
+                                <Calculator className="h-3 w-3" />
+                                Calculado
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs">
+                              Este monto se calcula automáticamente a partir
+                              de los procesos de compra registrados en el
+                              sistema. No se edita a mano.
+                            </TooltipContent>
+                          </Tooltip>
                         )}
                       </div>
                     </TableCell>
-                  )}
-                </TableRow>
-              ))
+                    <TableCell className="text-right tabular-nums">
+                      {money(Number(row.monto))}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                      {row.nota ?? "—"}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
+                      {isDerivado ? "en vivo" : dateTime(row.updated_at)}
+                    </TableCell>
+                    {canWrite && (
+                      <TableCell className="text-right">
+                        {isDerivado ? null : (
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(row)}
+                              aria-label="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleting(row)}
+                                aria-label="Eliminar"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

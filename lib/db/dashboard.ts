@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Tables, ProcesoEstado } from "@/types/database";
 
 export interface DashboardData {
-  budget: Tables<"budget">[];
+  budget: Tables<"budget_view">[];
   pacc: {
     count: number;
     total: number;
@@ -25,7 +25,9 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   const [budgetRes, paccCountRes, paccValoresRes, procesosRes] =
     await Promise.all([
-      supabase.from("budget").select("*").order("id"),
+      // Lee de la vista, no de la tabla, para obtener los montos derivados
+      // ya calculados (Comprometido, Ejecutado, Disponible real).
+      supabase.from("budget_view").select("*").order("id"),
       supabase.from("pacc").select("*", { count: "exact", head: true }),
       supabase.from("pacc").select("valor").not("valor", "is", null),
       supabase.from("procesos").select("estado, monto"),

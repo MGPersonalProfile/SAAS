@@ -31,6 +31,20 @@ export async function upsertBudget(
   const supabase = await createClient();
 
   if (input.id) {
+    // Bloquear edición de partidas derivadas: su monto se calcula desde procesos.
+    const { data: existing } = await supabase
+      .from("budget")
+      .select("tipo")
+      .eq("id", input.id)
+      .maybeSingle();
+    if (existing?.tipo === "derivado") {
+      return {
+        ok: false,
+        error:
+          "Esta partida se calcula automáticamente desde los procesos del sistema. No es editable.",
+      };
+    }
+
     const { error } = await supabase
       .from("budget")
       .update({
@@ -73,9 +87,17 @@ export async function deleteBudget(id: number): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: existing } = await supabase
     .from("budget")
-    .select("concepto")
+    .select("concepto, tipo")
     .eq("id", id)
     .maybeSingle();
+
+  if (existing?.tipo === "derivado") {
+    return {
+      ok: false,
+      error:
+        "Esta partida se calcula automáticamente desde los procesos. No se puede eliminar.",
+    };
+  }
 
   const { error } = await supabase.from("budget").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };

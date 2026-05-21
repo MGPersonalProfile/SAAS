@@ -72,6 +72,29 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
   const modalidadSugerida = suggestModalidad(Number(monto || 0));
   const alertaUmbral = detectarUmbralCercano(Number(monto || 0));
 
+  // Impacto previsto sobre el balance (solo en alta de procesos; al editar el
+  // estado no cambia desde este formulario).
+  const ESTADOS_COMPROMETIDOS: ProcesoInput["estado"][] = [
+    "Validado PACC",
+    "Validado presupuesto",
+    "Enviado a Tegucigalpa",
+    "Observado",
+    "Subsanado",
+    "En proceso UCP",
+    "Adjudicado",
+    "Recibido",
+  ];
+  const ESTADOS_EJECUTADOS: ProcesoInput["estado"][] = ["Pagado", "Cerrado"];
+  const montoNumber = Number(monto || 0);
+  const impactoBalance =
+    !isEdit && montoNumber > 0
+      ? ESTADOS_COMPROMETIDOS.includes(estado)
+        ? ("compromete" as const)
+        : ESTADOS_EJECUTADOS.includes(estado)
+          ? ("ejecuta" as const)
+          : ("sin_impacto" as const)
+      : null;
+
   function onSubmit(values: ProcesoInput) {
     setServerError(null);
     startTransition(async () => {
@@ -134,6 +157,20 @@ export function ProcesoForm({ initial }: ProcesoFormProps) {
               <strong>L {alertaUmbral.threshold.toLocaleString("en-US")}</strong>{" "}
               para pasar a <strong>{alertaUmbral.proximaModalidad}</strong>.
               Revisar si conviene una compra única en la modalidad superior.
+            </p>
+          )}
+          {impactoBalance === "compromete" && (
+            <p className="text-xs text-primary bg-primary/5 border border-primary/20 rounded px-2 py-1">
+              Este proceso reservará{" "}
+              <strong>L {montoNumber.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>{" "}
+              del presupuesto disponible (entra como comprometido).
+            </p>
+          )}
+          {impactoBalance === "ejecuta" && (
+            <p className="text-xs text-primary bg-primary/5 border border-primary/20 rounded px-2 py-1">
+              Este proceso registrará{" "}
+              <strong>L {montoNumber.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>{" "}
+              directamente como ejecutado.
             </p>
           )}
         </div>

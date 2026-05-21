@@ -187,6 +187,7 @@ export default async function ProcesoDetallePage({
               <CambioEstadoForm
                 procesoId={proceso.id}
                 estadoActual={proceso.estado}
+                monto={Number(proceso.monto)}
               />
             </CardContent>
           </Card>
