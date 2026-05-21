@@ -1,4 +1,4 @@
-import { Download, FileText, FileSpreadsheet } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, BookOpen } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
@@ -40,6 +40,12 @@ export default async function ReportesPage() {
           title="Presupuesto (CSV)"
           description="Partidas presupuestarias con concepto, monto y nota."
           href="/api/budget/export"
+        />
+        <ReportCard
+          icon={<BookOpen className="h-5 w-5" />}
+          title="Manual de usuario (PDF)"
+          description="Guía paso a paso de uso del sistema. 19 páginas con todos los módulos, roles y flujos explicados."
+          href="/api/manual/pdf"
         />
       </div>
     </>
