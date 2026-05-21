@@ -32,25 +32,40 @@ export async function createProceso(input: ProcesoInput): Promise<ActionResult> 
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const baseInsert = {
+    codigo: parsed.data.codigo,
+    linea_pacc: parsed.data.linea_pacc || null,
+    objeto: parsed.data.objeto || null,
+    descripcion: parsed.data.descripcion,
+    monto: parsed.data.monto,
+    estado: parsed.data.estado,
+    responsable: parsed.data.responsable || null,
+    prioridad: parsed.data.prioridad,
+    created_by: profile.id,
+    updated_by: profile.id,
+  };
+  const withPaccId = { ...baseInsert, pacc_id: parsed.data.pacc_id ?? null };
+
+  let { data, error } = await supabase
     .from("procesos")
-    .insert({
-      codigo: parsed.data.codigo,
-      pacc_id: parsed.data.pacc_id ?? null,
-      linea_pacc: parsed.data.linea_pacc || null,
-      objeto: parsed.data.objeto || null,
-      descripcion: parsed.data.descripcion,
-      monto: parsed.data.monto,
-      estado: parsed.data.estado,
-      responsable: parsed.data.responsable || null,
-      prioridad: parsed.data.prioridad,
-      created_by: profile.id,
-      updated_by: profile.id,
-    })
+    .insert(withPaccId)
     .select("id")
     .single();
 
-  if (error) return { ok: false, error: error.message };
+  // Fallback si la migración 0007 (columna pacc_id) no se ha aplicado.
+  if (error && /pacc_id/i.test(error.message)) {
+    const retry = await supabase
+      .from("procesos")
+      .insert(baseInsert)
+      .select("id")
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
+
+  if (error || !data) {
+    return { ok: false, error: error?.message ?? "Error al crear" };
+  }
 
   await supabase.from("audit_log").insert({
     usuario_id: profile.id,
@@ -87,20 +102,30 @@ export async function updateProceso(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const baseUpdate = {
+    codigo: parsed.data.codigo,
+    linea_pacc: parsed.data.linea_pacc || null,
+    objeto: parsed.data.objeto || null,
+    descripcion: parsed.data.descripcion,
+    monto: parsed.data.monto,
+    responsable: parsed.data.responsable || null,
+    prioridad: parsed.data.prioridad,
+    updated_by: profile.id,
+  };
+  const withPaccId = { ...baseUpdate, pacc_id: parsed.data.pacc_id ?? null };
+
+  let { error } = await supabase
     .from("procesos")
-    .update({
-      codigo: parsed.data.codigo,
-      pacc_id: parsed.data.pacc_id ?? null,
-      linea_pacc: parsed.data.linea_pacc || null,
-      objeto: parsed.data.objeto || null,
-      descripcion: parsed.data.descripcion,
-      monto: parsed.data.monto,
-      responsable: parsed.data.responsable || null,
-      prioridad: parsed.data.prioridad,
-      updated_by: profile.id,
-    })
+    .update(withPaccId)
     .eq("id", id);
+
+  if (error && /pacc_id/i.test(error.message)) {
+    const retry = await supabase
+      .from("procesos")
+      .update(baseUpdate)
+      .eq("id", id);
+    error = retry.error;
+  }
 
   if (error) return { ok: false, error: error.message };
 

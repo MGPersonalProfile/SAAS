@@ -42,38 +42,55 @@ export async function listProcesos(
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  let query = supabase
-    .from("procesos")
-    .select(`*, pacc:pacc_id(${PACC_SELECT})`, { count: "exact" })
-    .order("created_at", { ascending: false });
-
-  if (filters.q && filters.q.trim()) {
-    const term = filters.q.trim();
-    query = query.or(
-      `codigo.ilike.%${term}%,descripcion.ilike.%${term}%,objeto.ilike.%${term}%,responsable.ilike.%${term}%`,
-    );
+  // Construye la query base reutilizable para el intento con embed y el fallback.
+  function buildQuery(selectExpr: string) {
+    let q = supabase
+      .from("procesos")
+      .select(selectExpr, { count: "exact" })
+      .order("created_at", { ascending: false });
+    if (filters.q && filters.q.trim()) {
+      const term = filters.q.trim();
+      q = q.or(
+        `codigo.ilike.%${term}%,descripcion.ilike.%${term}%,objeto.ilike.%${term}%,responsable.ilike.%${term}%`,
+      );
+    }
+    if (filters.estado) q = q.eq("estado", filters.estado);
+    if (filters.prioridad) q = q.eq("prioridad", filters.prioridad);
+    if (filters.pacc_id) q = q.eq("pacc_id", filters.pacc_id);
+    return q.range(from, to);
   }
-  if (filters.estado) query = query.eq("estado", filters.estado);
-  if (filters.prioridad) query = query.eq("prioridad", filters.prioridad);
-  if (filters.pacc_id) query = query.eq("pacc_id", filters.pacc_id);
 
-  const { data, count, error } = await query.range(from, to);
-  if (error) throw error;
+  // Intenta con JOIN a pacc; si la migración 0007 todavía no se ha aplicado
+  // (columna pacc_id inexistente), cae a select básico sin embed.
+  const withEmbed = await buildQuery(`*, pacc:pacc_id(${PACC_SELECT})`);
+  let data: unknown[] = [];
+  let count = 0;
+  if (withEmbed.error) {
+    const fallback = await buildQuery("*");
+    if (fallback.error) throw fallback.error;
+    data = (fallback.data ?? []).map((r) => ({
+      ...(r as object),
+      pacc: null,
+    }));
+    count = fallback.count ?? 0;
+  } else {
+    data = withEmbed.data ?? [];
+    count = withEmbed.count ?? 0;
+  }
 
-  const total = count ?? 0;
   return {
-    rows: (data ?? []) as unknown as ProcesoWithPacc[],
-    total,
+    rows: data as ProcesoWithPacc[],
+    total: count,
     page,
     pageSize,
-    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    totalPages: Math.max(1, Math.ceil(count / pageSize)),
   };
 }
 
 export async function getProceso(id: number) {
   const supabase = await createClient();
 
-  const [procesoRes, historialRes] = await Promise.all([
+  const [procesoEmbedRes, historialRes] = await Promise.all([
     supabase
       .from("procesos")
       .select(`*, pacc:pacc_id(${PACC_SELECT})`)
@@ -86,11 +103,24 @@ export async function getProceso(id: number) {
       .order("changed_at", { ascending: false }),
   ]);
 
-  if (procesoRes.error) throw procesoRes.error;
-  if (!procesoRes.data) return null;
+  // Fallback si la migración 0007 no se aplicó (sin embed).
+  let proceso: ProcesoWithPacc | null;
+  if (procesoEmbedRes.error) {
+    const fb = await supabase
+      .from("procesos")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (fb.error) throw fb.error;
+    proceso = fb.data ? ({ ...fb.data, pacc: null } as ProcesoWithPacc) : null;
+  } else {
+    proceso = procesoEmbedRes.data as ProcesoWithPacc | null;
+  }
+
+  if (!proceso) return null;
 
   return {
-    proceso: procesoRes.data as unknown as ProcesoWithPacc,
+    proceso,
     historial: historialRes.data ?? [],
   };
 }
@@ -107,6 +137,7 @@ export async function listProcesosByPacc(
     .select("*")
     .eq("pacc_id", paccId)
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  // Fallback silencioso si la migración 0007 no se aplicó todavía.
+  if (error) return [];
   return data ?? [];
 }
